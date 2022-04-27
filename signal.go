@@ -18,13 +18,12 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Signal workflow started", "name", name)
 
+	// Wait to receive signal.
+	workflow.Sleep(ctx, time.Second*10)
+
 	var signalVal string = "World"
 	signalChan := workflow.GetSignalChannel(ctx, "your-signal-name")
-	selector := workflow.NewSelector(ctx)
-	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
-		channel.Receive(ctx, &signalVal)
-	})
-	selector.Select(ctx)
+	signalChan.ReceiveAsync(&signalVal)
 
 	var result string
 	err := workflow.ExecuteActivity(ctx, Activity, signalVal).Get(ctx, &result)
