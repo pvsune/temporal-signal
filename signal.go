@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -22,13 +23,18 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	signalChan := workflow.GetSignalChannel(ctx, "your-signal-name")
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
-		channel.ReceiveAsync(&signalVal)
+		channel.Receive(ctx, &signalVal)
 	})
 	timerFuture := workflow.NewTimer(ctx, time.Second*10)
 	selector.AddFuture(timerFuture, func(future workflow.Future) {
 		signalVal = "World"
 	})
 	selector.Select(ctx)
+
+	switch signalVal {
+	case "cancel":
+		return "", temporal.NewCanceledError()
+	}
 
 	var result string
 	err := workflow.ExecuteActivity(ctx, Activity, signalVal).Get(ctx, &result)

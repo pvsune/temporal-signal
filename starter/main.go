@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 
 	ts "github.com/pvsune/signal"
 )
@@ -33,6 +34,10 @@ func main() {
 	var result string
 	err = we.Get(context.Background(), &result)
 	if err != nil {
+		if temporal.IsCanceledError(err) {
+			log.Println("Workflow cancelled")
+			return
+		}
 		log.Fatalln("Unable get workflow result", err)
 	}
 	log.Println("Workflow result:", result)
