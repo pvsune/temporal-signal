@@ -18,8 +18,16 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Signal workflow started", "name", name)
 
+	var signalVal string = "World"
+	signalChan := workflow.GetSignalChannel(ctx, "your-signal-name")
+	selector := workflow.NewSelector(ctx)
+	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
+		channel.Receive(ctx, &signalVal)
+	})
+	selector.Select(ctx)
+
 	var result string
-	err := workflow.ExecuteActivity(ctx, Activity, name).Get(ctx, &result)
+	err := workflow.ExecuteActivity(ctx, Activity, signalVal).Get(ctx, &result)
 	if err != nil {
 		logger.Error("Activity failed.", "Error", err)
 		return "", err
