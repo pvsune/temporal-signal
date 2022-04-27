@@ -1,4 +1,4 @@
-module github.com/pvsune/signal
+module github.com/pvsune/temporal-signal
 
 go 1.17
 

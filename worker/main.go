@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
-	ts "github.com/pvsune/signal"
+	ts "github.com/pvsune/temporal-signal"
 )
 
 func main() {
