@@ -9,6 +9,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+type MySignal struct {
+	Type           string `json:"type"`
+	Message        string `json:"message"`
+	ExtendDuration int64  `json:"duration"`
+}
+
 // Workflow is a sample workflow definition.
 func Workflow(ctx workflow.Context, name string) (string, error) {
 	ao := workflow.ActivityOptions{
@@ -19,7 +25,7 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Signal workflow started", "name", name)
 
-	signalVal, err := waitForSignal(ctx)
+	signalVal, err := waitForSignal(ctx, 10)
 	if err != nil {
 		return "", err
 	}
@@ -42,24 +48,24 @@ func Activity(ctx context.Context, name string) (string, error) {
 	return "Hello " + name + "!", nil
 }
 
-func waitForSignal(ctx workflow.Context) (string, error) {
-	var signalVal string = "World"
+func waitForSignal(ctx workflow.Context, extend time.Duration) (string, error) {
+	var signalVal MySignal
 	signalChan := workflow.GetSignalChannel(ctx, "your-signal-name")
 	selector := workflow.NewSelector(ctx)
 	selector.AddReceive(signalChan, func(channel workflow.ReceiveChannel, more bool) {
 		channel.Receive(ctx, &signalVal)
 	})
-	timerFuture := workflow.NewTimer(ctx, time.Second*10)
+	timerFuture := workflow.NewTimer(ctx, time.Second*extend)
 	selector.AddFuture(timerFuture, func(future workflow.Future) {
-		// Do nothing.
+		signalVal.Message = "World"
 	})
 	selector.Select(ctx)
 
-	switch signalVal {
+	switch signalVal.Type {
 	case "cancel":
 		return "", temporal.NewCanceledError()
 	case "extend":
-		return waitForSignal(ctx)
+		return waitForSignal(ctx, time.Duration(signalVal.ExtendDuration))
 	}
-	return signalVal, nil
+	return signalVal.Message, nil
 }

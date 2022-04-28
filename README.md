@@ -8,3 +8,15 @@ go run worker/main.go
 ```
 go run starter/main.go
 ```
+4) Run the following command to change the message
+```
+go run ./signal/main.go -s '{"message": "Philamer"}'
+```
+5) Run the following command to cancel the workflow
+```
+go run ./signal/main.go -s '{"type": "cancel"}'
+```
+6) Run the following command to extend the workflow
+```
+go run ./signal/main.go -s '{"type": "extend", "duration": 5}'
+```

@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"log"
 
 	"go.temporal.io/sdk/client"
+
+	ts "github.com/pvsune/temporal-signal"
 )
 
 func main() {
-	var workflowID, signal string
-	flag.StringVar(&workflowID, "w", "temporal_signal_workflowID", "WorkflowID.")
-	flag.StringVar(&signal, "s", "World", "Signal data.")
+	var signal string
+	flag.StringVar(&signal, "s", "{}", "Signal data.")
 	flag.Parse()
 
 	// The client is a heavyweight object that should be created once per process.
@@ -23,7 +25,11 @@ func main() {
 	}
 	defer c.Close()
 
-	err = c.SignalWorkflow(context.Background(), workflowID, "", "your-signal-name", signal)
+	var signalVal = &ts.MySignal{}
+	if err := json.Unmarshal([]byte(signal), signalVal); err != nil {
+		log.Fatalln("Unable to unmarshal signal value", err)
+	}
+	err = c.SignalWorkflow(context.Background(), "temporal_signal_workflowID", "", "your-signal-name", signalVal)
 	if err != nil {
 		log.Fatalln("Unable to signal workflow", err)
 	}
